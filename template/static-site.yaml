@@ -1,0 +1,17 @@
+Resources:
+  CintsaUserPool:
+    Type: AWS::Cognito::UserPool
+    Properties:
+      UserPoolName: cintsa-{{appName}}-userpool-{{uniqueKey}}
+  CintsaUserPoolClient:
+    Type: AWS::Cognito::UserPoolClient
+    Properties:
+      ClientName: cintsa-{{appName}}-userpool-client-{{uniqueKey}}
+      UserPoolId: !Ref CintsaUserPool
+
+Outputs:
+  CognitoClient:
+    Description: The Userpool client to associate the CMS with
+    Value: !Ref CintsaUserPoolClient
+    Export:
+      Name: CintsaUserPoolClient
