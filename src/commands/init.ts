@@ -1,6 +1,5 @@
 import {Command, flags} from '@oclif/command'
 import * as fs from 'fs';
-import cli from 'cli-ux'
 import * as path from 'path';
 
 export default class Init extends Command {
@@ -19,14 +18,11 @@ export default class Init extends Command {
 
     if (fs.existsSync(this.dirPath)) {
       this.log(`Already initiated. Do 'cintsa create-site' to create your AWS resources or do 'cintsa deploy' to deploy your site`);
+      this.exit();
     }
     else {
-      cli.action.start('Copying configs...')
       fs.mkdirSync(this.dirPath);
-      fs.readdirSync(this.templatePath).forEach((file: string) => {
-        fs.copyFileSync(path.join(this.templatePath, file), path.join(this.destPath, file));
-      });
-      cli.action.stop();
+      fs.copyFileSync(path.join(this.templatePath, 'config.json'), path.join(this.destPath, 'config.json'));
       this.log(`You're ready to create your AWS resources.`)
       this.log(`Next, edit the configuration file in .cintsa/config.json:`)
       this.log(`

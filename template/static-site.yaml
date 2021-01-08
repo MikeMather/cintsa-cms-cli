@@ -1,17 +1,129 @@
 Resources:
+  # Cognito user pool and identity pool for site-editor authorization
   CintsaUserPool:
     Type: AWS::Cognito::UserPool
     Properties:
-      UserPoolName: cintsa-{{appName}}-userpool-{{uniqueKey}}
+      UserPoolName: cintsa-{{appName}}-user-pool
   CintsaUserPoolClient:
     Type: AWS::Cognito::UserPoolClient
     Properties:
-      ClientName: cintsa-{{appName}}-userpool-client-{{uniqueKey}}
+      ClientName: cintsa-{{appName}}-user-pool-client
       UserPoolId: !Ref CintsaUserPool
 
+  CintsaIdentityPool:
+    Type: AWS::Cognito::IdentityPool
+    Properties:
+      IdentityPoolName: cintsa-{{appName}}-identity-pool
+      AllowUnauthenticatedIdentities: false
+      CognitoIdentityProviders:
+        - ClientId: !Ref CintsaUserPoolClient
+          ProviderName: !GetAtt CintsaUserPool.ProviderName
+
+  # IAM role used for authenticated users
+  CintsaAuthRole:
+    Type: AWS::IAM::Role
+    Properties:
+      Path: /
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: 'Allow'
+            Principal:
+              Federated: 'cognito-identity.amazonaws.com'
+            Action:
+              - 'sts:AssumeRoleWithWebIdentity'
+            Condition:
+              StringEquals:
+                'cognito-identity.amazonaws.com:aud':
+                  Ref: CintsaIdentityPool
+              'ForAnyValue:StringLike':
+                'cognito-identity.amazonaws.com:amr': authenticated
+      Policies:
+        - PolicyName: 'CognitoAuthorizedPolicy'
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: 'Allow'
+                Action:
+                  - 'cognito-sync:*'
+                  - 'cognito-identity:*'
+                Resource: '*'
+              
+              # S3 bucket for firmware files
+              - Effect: 'Allow'
+                Action:
+                  - 's3:PutObject'
+                  - 's3:DeleteObject'
+                  - 's3:ListObjectsV2'
+                  - 's3:GetObject'
+                Resource: !GetAtt CintsaS3Bucket.Arn
+
+  # IAM roles
+  CintsaIdentityPoolRoles:
+    Type: AWS::Cognito::IdentityPoolRoleAttachment
+    Properties:
+      IdentityPoolId: !Ref CintsaIdentityPool
+      Roles:
+        authenticated: !GetAtt CintsaAuthRole.Arn
+      
+
+  # S3 bucket for hosting the site
+  CintsaS3Bucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: {{domainName}}
+      AccessControl: PublicRead
+      WebsiteConfiguration:
+        IndexDocument: index.html
+        ErrorDocument: 404.html
+  CintsaBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      PolicyDocument:
+        Id: CintsaStaticHost
+        Version: 2012-10-17
+        Statement:
+          - Sid: PublicReadForGetBucketObjects
+            Effect: Allow
+            Principal: '*'
+            Action: 's3:GetObject'
+            Resource: !Join 
+              - ''
+              - - 'arn:aws:s3:::'
+                - !Ref CintsaS3Bucket
+                - /*
+          - Sid: DenyAdminFolder
+            Effect: Deny
+            NotPrincipal:
+              AWS: !GetAtt CintsaAuthRole.Arn 
+            Action: 's3:GetObject'
+            Resource: !Join 
+              - ''
+              - - 'arn:aws:s3:::'
+                - !Ref CintsaS3Bucket
+                - /admin/*
+      Bucket: !Ref CintsaS3Bucket
+
 Outputs:
-  CognitoClient:
-    Description: The Userpool client to associate the CMS with
+  CintsaUserPool:
+    Description: The User pool to associate the CMS with
+    Value: !Ref CintsaUserPool
+    Export:
+      Name: {{appName}}-CintsaUserPoolId
+  CintsaUserPoolClient:
+    Description: The User pool client to associate the CMS with
     Value: !Ref CintsaUserPoolClient
     Export:
-      Name: CintsaUserPoolClient
+      Name: {{appName}}-CintsaUserPoolClientId
+  CinstaIdentityPoolId:
+    Description: ID of the Cintsa Cognito identity ppol
+    Value: !Ref CintsaIdentityPool
+    Export:
+      Name: {{appName}}-CintsaIdentityPoolId
+  CintsaWebsiteURL:
+    Description: URL for website hosted on S3 with Cintsa CMS
+    Value: !GetAtt 
+      - CintsaS3Bucket
+      - WebsiteURL
+    Export:
+      Name: {{appName}}-CintsaWebsiteURL
