@@ -2,7 +2,7 @@ import {Command, flags} from '@oclif/command'
 import * as path from 'path';
 import * as fse from 'fs-extra';
 import * as nj from 'nunjucks';
-import { Schema } from '../types/types';
+import { Schema, SchemaStatus } from '../types/types';
 import * as marked from 'marked';
 const fm = require('front-matter')
 
@@ -32,6 +32,7 @@ export default class Deploy extends Command {
         };
         const rendered = nj.render(filePath, view);
         if (file === 'index.html') {
+          this.log(`Rendered ${this.destDir}/${file}`);
           fse.writeFileSync(`${this.destDir}/${file}`, rendered);
         }
         else {
@@ -40,6 +41,7 @@ export default class Deploy extends Command {
           if (!this.dirExists(rootFolderPath)) {
             fse.mkdirSync(rootFolderPath)
           }
+          this.log(`Rendered ${rootFolderPath}/index.html`);
           fse.writeFileSync(`${rootFolderPath}/index.html`, rendered);
         }
       }
@@ -102,12 +104,16 @@ export default class Deploy extends Command {
         ...context,
         global: this.schemas
       }
-      const rendered = nj.render(`${this.srcDir}/layouts/${context.layout}.html`, view);
-      const destDir = `${this.destDir}/${context.slug}`;
-      if (!this.dirExists(destDir)) {
-        fse.mkdirSync(destDir);
+      // Only render published files
+      if (view.status === SchemaStatus.PUBLISHED) {
+        const rendered = nj.render(`${this.srcDir}/layouts/${context.layout}.html`, view);
+        const destDir = `${this.destDir}/${context.slug}`;
+        if (!this.dirExists(destDir)) {
+          fse.mkdirSync(destDir);
+        }
+        this.log(`Rendered ${destDir}/index.html`)
+        fse.writeFileSync(`${destDir}/index.html`, rendered);
       }
-      fse.writeFileSync(`${destDir}/index.html`, rendered);
     });
   }
 

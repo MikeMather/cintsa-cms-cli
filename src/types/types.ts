@@ -10,8 +10,14 @@ export type Config = {
 };
 
 export type Schema = {
-    layout: string
-    status: string
-    slug: string
+    layout: string;
+    status: 'draft' | 'review' | 'published';
+    slug: string;
     [key: string]: any
+}
+
+export const SchemaStatus = {
+    DRAFT: 'draft',
+    REVIEW: 'review',
+    PUBLISHED: 'published'
 }
