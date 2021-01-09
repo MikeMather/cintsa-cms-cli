@@ -8,3 +8,10 @@ export type Config = {
     region: string;
     siteGenerator: string;
 };
+
+export type Schema = {
+    layout: string
+    status: string
+    slug: string
+    [key: string]: any
+}

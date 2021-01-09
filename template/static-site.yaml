@@ -4,6 +4,17 @@ Resources:
     Type: AWS::Cognito::UserPool
     Properties:
       UserPoolName: cintsa-{{appName}}-user-pool
+      AdminCreateUserConfig:
+        AllowAdminCreateUserOnly: true
+      Policies:
+        PasswordPolicy:
+          MinimumLength: 8
+          RequireLowercase: true
+          RequireNumbers: true
+          RequireSymbols: false
+          RequireUppercase: true
+          TemporaryPasswordValidityDays: 1
+
   CintsaUserPoolClient:
     Type: AWS::Cognito::UserPoolClient
     Properties:

@@ -1,13 +1,12 @@
 {
     "awsconfig": {
-        "aws_cognito_identity_pool_id": "ca-central-1:6f1dc751-c989-4242-bfc1-d2a3a01752b2",
-        "aws_cognito_region": "ca-central-1",
-        "aws_project_region": "ca-central-1",
-        "aws_user_files_s3_bucket": "dev-ca-breathesuite-firmware-files",
-        "aws_user_files_s3_bucket_region": "ca-central-1",
-        "aws_user_pools_id": "ca-central-1_7S2xVtUnc",
-        "aws_user_pools_web_client_id": "1kmagjo087b4iltguul3978mld"
+        "aws_cognito_identity_pool_id": "",
+        "aws_cognito_region": "",
+        "aws_project_region": "",
+        "aws_user_files_s3_bucket": "",
+        "aws_user_files_s3_bucket_region": "",
+        "aws_user_pools_id": "",
+        "aws_user_pools_web_client_id": ""
     },
-    "appName": "",
-    "siteGenerator": ""
+    "appName": ""
 }
