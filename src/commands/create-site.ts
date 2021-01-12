@@ -23,7 +23,7 @@ export default class CreateSite extends Command {
 
   validateConfig(config: Config): void {
     const { appName, domainName, region, profile, siteGenerator } = config;
-    if (!(appName && domainName && region && profile && siteGenerator)) {
+    if (!(appName && domainName && region && profile)) {
       this.error('Config values from config.json missing or invalid');
     }
   }
@@ -38,18 +38,15 @@ export default class CreateSite extends Command {
     const { region, domainName, appName } = config;
     // The format of the file that Amplify needs to authenticate
     const awsExports: {[key: string]: string} = {
-        aws_cognito_region: region,
-        aws_project_region: region,
-        aws_user_files_s3_bucket_region: region,
-        aws_user_files_s3_bucket: domainName,
-        aws_cognito_identity_pool_id: '',
-        aws_user_pools_id: '',
-        aws_user_pools_web_client_id: ''
+        region,
+        identityPoolId: '',
+        userPoolId: '',
+        userPoolWebClientId: ''
     };
 
     // Put the app name into the CF variables and map them to the export file variables
     const cfOutput = [ 'CintsaIdentityPoolId', 'CintsaUserPoolClientId', 'CintsaUserPoolId' ];
-    const exportKeys = [ 'aws_cognito_identity_pool_id', 'aws_user_pools_web_client_id', 'aws_user_pools_id' ]
+    const exportKeys = [ 'identityPoolId', 'userPoolWebClientId', 'userPoolId' ]
     const keys: {[key: string]: string } = cfOutput.reduce((obj, key, i) => ({ 
       ...obj,
       [`${appName}-${key}`]: exportKeys[i] 
@@ -61,7 +58,14 @@ export default class CreateSite extends Command {
         }
       });
     });
-    fs.writeFileSync(this.destExportsPath, JSON.stringify(awsExports, null, 4));
+    const output = {
+      auth: awsExports,
+      storage: {
+        bucket: domainName,
+        region
+      }
+    }
+    fs.writeFileSync(this.destExportsPath, JSON.stringify(output, null, 4));
   }
 
 
@@ -94,7 +98,8 @@ export default class CreateSite extends Command {
     };
     this.log(`Cintsa will now create the AWS resources necessary to host your CMS, including:
       1. An S3 bucket for static site hosting
-      2. A Cognito user pool for authorization
+      2. A Cognito user/identity pool for authorization
+      3. A Cloudfront distribution as a CDN
     `);
     const confirm: boolean = await cli.confirm('Continue? (y/n)');
     if (!confirm) {
@@ -102,7 +107,7 @@ export default class CreateSite extends Command {
     }
 
     // Create the stack
-    cli.action.start('Creating CloudFormation stack...');
+    cli.action.start('Creating CloudFormation stack. This might take a few minutes');
     cfn.createStack(params, (err, data) => {
       if (err) {
         this.log('An error occurred creating the stack')
@@ -120,6 +125,7 @@ export default class CreateSite extends Command {
           this.generateExportsFile(data.Exports, config);
         });
         cli.action.stop();
+        this.log('Note: It might take a few minutes for your CloudFront distribution to register with the S3 bucket.')
       });
     });
   }

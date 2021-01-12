@@ -9,14 +9,14 @@ export type Config = {
     siteGenerator: string;
 };
 
-export type Schema = {
+export type Piece = {
     layout: string;
     status: 'draft' | 'review' | 'published';
     slug: string;
     [key: string]: any
 }
 
-export const SchemaStatus = {
+export const PieceStatus = {
     DRAFT: 'draft',
     REVIEW: 'review',
     PUBLISHED: 'published'

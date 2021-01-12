@@ -2,7 +2,6 @@ import {Command, flags} from '@oclif/command'
 import * as path from 'path';
 import * as fs from 'fs';
 import * as AWS from 'aws-sdk';
-import * as crypto from 'crypto';
 import { generate } from 'generate-password';
 
 export default class CreateUser extends Command {
@@ -10,7 +9,7 @@ export default class CreateUser extends Command {
 
   static flags = {
     help: flags.help({char: 'h'}),
-    email: flags.string({char: 'e'})
+    email: flags.string({char: 'e', required: true})
   }
   readonly dirPath = '.cintsa';
   readonly awsExportsPath = path.join(process.cwd(), `${this.dirPath}/aws-exports.json`);
@@ -35,12 +34,11 @@ export default class CreateUser extends Command {
     
     const resources = JSON.parse(fs.readFileSync(this.awsExportsPath).toString());
     const tmpPassword = this.generateTempPassword();
-    console.log(tmpPassword);
     const cognito = new AWS.CognitoIdentityServiceProvider({
-        region: resources.aws_cognito_region
+        region: resources.auth.region
     });
     const params = {
-        UserPoolId: resources.aws_user_pools_id,
+        UserPoolId: resources.auth.userPoolId,
         Username: flags.email,
         DesiredDeliveryMediums: [
             'EMAIL'

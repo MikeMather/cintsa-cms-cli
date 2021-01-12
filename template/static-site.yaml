@@ -65,9 +65,11 @@ Resources:
                 Action:
                   - 's3:PutObject'
                   - 's3:DeleteObject'
+                  - 's3:DeleteObjects'
                   - 's3:ListObjectsV2'
                   - 's3:GetObject'
-                Resource: !GetAtt CintsaS3Bucket.Arn
+                  - 's3:ListBucket'
+                Resource: !Sub ${CintsaS3Bucket.Arn}/*
 
   # IAM roles
   CintsaIdentityPoolRoles:
@@ -87,33 +89,85 @@ Resources:
       WebsiteConfiguration:
         IndexDocument: index.html
         ErrorDocument: 404.html
+      CorsConfiguration:
+        CorsRules:
+          - AllowedOrigins: 
+              - '*'
+            AllowedMethods: 
+              - 'GET'
+              - 'PUT'
+              - 'POST'
+              - 'DELETE'
+            MaxAge: 3000
+            ExposedHeaders: 
+              - 'x-amz-server-side-encryption'
+              - 'x-amz-request-id'
+              - 'x-amz-id-2'
+              - 'ETag'
+            AllowedHeaders: 
+              - '*'
+
+  # Bucket Policy allows public access except for /admin folder
   CintsaBucketPolicy:
     Type: AWS::S3::BucketPolicy
     Properties:
+      Bucket: !Ref CintsaS3Bucket
       PolicyDocument:
         Id: CintsaStaticHost
         Version: 2012-10-17
         Statement:
-          - Sid: PublicReadForGetBucketObjects
+          - Sid: AllowCloudfrontAccess
             Effect: Allow
-            Principal: '*'
-            Action: 's3:GetObject'
-            Resource: !Join 
-              - ''
-              - - 'arn:aws:s3:::'
-                - !Ref CintsaS3Bucket
-                - /*
-          - Sid: DenyAdminFolder
+            Principal:
+              AWS: !Sub 'arn:aws:iam::cloudfront:user/CloudFront Origin Access Identity ${CintsaOriginAccessIdentity}'
+            Action: 
+              - 's3:GetObject'
+            Resource: !Sub 'arn:aws:s3:::${CintsaS3Bucket}/*'
+          - Sid: AllowAdminAccess
+            Effect: Allow
+            Principal:
+              AWS: !GetAtt CintsaAuthRole.Arn 
+            Action: 
+              - 's3:PutObject'
+              - 's3:DeleteObject'
+              - 's3:GetObject'
+            Resource: !Sub 'arn:aws:s3:::${CintsaS3Bucket}/admin/*'
+          - Sid: RestrictAdminFolder
             Effect: Deny
             NotPrincipal:
               AWS: !GetAtt CintsaAuthRole.Arn 
-            Action: 's3:GetObject'
-            Resource: !Join 
-              - ''
-              - - 'arn:aws:s3:::'
-                - !Ref CintsaS3Bucket
-                - /admin/*
-      Bucket: !Ref CintsaS3Bucket
+            Action: 
+              - 's3:GetObject'
+            Resource: !Sub 'arn:aws:s3:::${CintsaS3Bucket}/admin/*'
+
+  CintsaOriginAccessIdentity:
+    Type: 'AWS::CloudFront::CloudFrontOriginAccessIdentity'
+    Properties:
+      CloudFrontOriginAccessIdentityConfig:
+        Comment: !Ref CintsaS3Bucket
+
+  CintsaCDN:
+    Type: AWS::CloudFront::Distribution
+    DependsOn: CintsaS3Bucket
+    Properties:
+      DistributionConfig:
+        Comment: Cloudfront distribution for S3-hosted static site
+        Enabled: 'true'
+        DefaultCacheBehavior:
+          ForwardedValues:
+            QueryString: 'true'
+          TargetOriginId: !Ref CintsaS3Bucket
+          ViewerProtocolPolicy: allow-all
+        DefaultRootObject: index.html
+        Origins:
+          - DomainName: !Sub '${CintsaS3Bucket}.s3-website-${AWS::Region}.amazonaws.com'
+            Id: !Ref CintsaS3Bucket
+            S3OriginConfig:
+              OriginAccessIdentity: !Ref CintsaOriginAccessIdentity
+            CustomOriginConfig:
+              HTTPPort: '80'
+              HTTPSPort: '443'
+              OriginProtocolPolicy: https-only
 
 Outputs:
   CintsaUserPool:
@@ -134,7 +188,7 @@ Outputs:
   CintsaWebsiteURL:
     Description: URL for website hosted on S3 with Cintsa CMS
     Value: !GetAtt 
-      - CintsaS3Bucket
-      - WebsiteURL
+      - CintsaCDN
+      - DomainName
     Export:
       Name: {{appName}}-CintsaWebsiteURL
