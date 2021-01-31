@@ -1,0 +1,17 @@
+{
+  "name": "lambda",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "aws-sdk": "^2.828.0",
+    "front-matter": "^4.0.2",
+    "marked": "^1.2.7",
+    "nunjucks": "^3.2.2"
+  }
+}

@@ -1,0 +1,264 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >
+  Cintsa CMS AWS Resources
+Parameters:
+  DomainName:
+    Type: String
+    Default: cintsa.com
+  AppName:
+    Type: String
+    Default: CintsaApp
+
+Resources:
+  CintsaLambdaBuilder:
+    Type: AWS::Lambda::Function
+    Properties:
+      PackageType: Zip
+      Handler: index.handler
+      Role: !GetAtt CintsaLambdaAuthRole.Arn
+      ReservedConcurrentExecutions: 1
+      Runtime: nodejs12.x
+      Code:
+        S3Bucket: !Sub 'cintsa-artifacts-${DomainName}'
+        S3Key: 'dynamicBuilder.zip'
+      Environment:
+        Variables:
+          REGION: !Ref AWS::Region
+          BUCKET: !Ref DomainName
+
+  # IAM role used for the lambda function to access the S3 files
+  CintsaLambdaAuthRole:
+    Type: AWS::IAM::Role
+    Properties:
+      Path: /
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Action:
+              - sts:AssumeRole
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+      Policies:
+        - PolicyName: 'CintsaLambdaBuilder'
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: 'Allow'
+                Action:
+                  - 's3:PutObject'
+                  - 's3:DeleteObject'
+                  - 's3:DeleteObjects'
+                  - 's3:ListObjectsV2'
+                  - 's3:GetObject'
+                  - 's3:ListBucket'
+                Resource: !Sub 'arn:aws:s3:::${DomainName}/*'
+
+  LambdaBuilderInvokePermission:
+    Type: 'AWS::Lambda::Permission'
+    Properties:
+      FunctionName: !GetAtt CintsaLambdaBuilder.Arn
+      Action: 'lambda:InvokeFunction'
+      Principal: s3.amazonaws.com
+      SourceAccount: !Ref 'AWS::AccountId'
+      SourceArn: !Sub 'arn:aws:s3:::${DomainName}'
+
+  CintsaS3Bucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Ref DomainName
+      AccessControl: PublicRead
+      WebsiteConfiguration:
+        IndexDocument: index.html
+        ErrorDocument: 404.html
+      NotificationConfiguration:
+        LambdaConfigurations:
+          - Event: 's3:ObjectCreated:*'
+            Filter:
+              S3Key:
+                Rules:
+                  - Name: prefix
+                    Value: admin/
+                  - Name: suffix
+                    Value: .md
+            Function: !GetAtt CintsaLambdaBuilder.Arn
+          - Event: 's3:ObjectRemoved:*'
+            Filter:
+              S3Key:
+                Rules:
+                  - Name: prefix
+                    Value: admin/
+                  - Name: suffix
+                    Value: .md
+            Function: !GetAtt CintsaLambdaBuilder.Arn
+      CorsConfiguration:
+        CorsRules:
+          - AllowedOrigins: 
+              - '*'
+            AllowedMethods: 
+              - 'GET'
+              - 'PUT'
+              - 'POST'
+              - 'DELETE'
+            MaxAge: 3000
+            ExposedHeaders: 
+              - 'x-amz-server-side-encryption'
+              - 'x-amz-request-id'
+              - 'x-amz-id-2'
+              - 'ETag'
+            AllowedHeaders: 
+              - '*'
+
+  # Bucket Policy allows public access except for /admin folder
+  CintsaBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref CintsaS3Bucket
+      PolicyDocument:
+        Id: CintsaStaticHost
+        Version: 2012-10-17
+        Statement:
+          - Sid: AllowPublicRead
+            Action:
+              - s3:GetObject
+            Effect: Allow
+            NotResource: !Sub 'arn:aws:s3:::${CintsaS3Bucket}/admin/*'
+            Principal: '*'
+          - Sid: AllowAdminAccess
+            Effect: Allow
+            Principal:
+              AWS: !GetAtt CintsaAuthRole.Arn 
+            Action: 
+              - 's3:PutObject'
+              - 's3:DeleteObject'
+              - 's3:GetObject'
+            Resource: !Sub 'arn:aws:s3:::${CintsaS3Bucket}/admin/*'
+
+  CintsaCDN:
+    Type: AWS::CloudFront::Distribution
+    DependsOn: CintsaS3Bucket
+    Properties:
+      DistributionConfig:
+        Comment: Cloudfront distribution for S3-hosted static site
+        Enabled: 'true'
+        DefaultCacheBehavior:
+          ForwardedValues:
+            QueryString: 'true'
+          TargetOriginId: !Ref CintsaS3Bucket
+          ViewerProtocolPolicy: allow-all
+        DefaultRootObject: index.html
+        Origins:
+          - DomainName: !Sub '${CintsaS3Bucket}.s3-website-${AWS::Region}.amazonaws.com'
+            Id: !Ref CintsaS3Bucket
+            OriginCustomHeaders:
+              - HeaderName: Referer
+                HeaderValue: !Ref DomainName
+            CustomOriginConfig:
+              HTTPPort: '80'
+              HTTPSPort: '443'
+              OriginProtocolPolicy: http-only
+
+  # Cognito user pool and identity pool for site-editor authorization
+  CintsaUserPool:
+    Type: AWS::Cognito::UserPool
+    Properties:
+      UserPoolName: !Sub 'cintsa-${AppName}-user-pool'
+      AdminCreateUserConfig:
+        AllowAdminCreateUserOnly: true
+      Policies:
+        PasswordPolicy:
+          MinimumLength: 8
+          RequireLowercase: true
+          RequireNumbers: true
+          RequireSymbols: false
+          RequireUppercase: true
+          TemporaryPasswordValidityDays: 1
+
+  CintsaUserPoolClient:
+    Type: AWS::Cognito::UserPoolClient
+    Properties:
+      ClientName: !Sub 'cintsa-${AppName}-user-pool-client'
+      UserPoolId: !Ref CintsaUserPool
+
+  CintsaIdentityPool:
+    Type: AWS::Cognito::IdentityPool
+    Properties:
+      IdentityPoolName: !Sub 'cintsa-${AppName}-identity-pool'
+      AllowUnauthenticatedIdentities: false
+      CognitoIdentityProviders:
+        - ClientId: !Ref CintsaUserPoolClient
+          ProviderName: !GetAtt CintsaUserPool.ProviderName
+
+  # IAM role used for authenticated users
+  CintsaAuthRole:
+    Type: AWS::IAM::Role
+    Properties:
+      Path: /
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: 'Allow'
+            Principal:
+              Federated: 'cognito-identity.amazonaws.com'
+            Action:
+              - 'sts:AssumeRoleWithWebIdentity'
+            Condition:
+              StringEquals:
+                'cognito-identity.amazonaws.com:aud':
+                  Ref: CintsaIdentityPool
+              'ForAnyValue:StringLike':
+                'cognito-identity.amazonaws.com:amr': authenticated
+      Policies:
+        - PolicyName: !Sub '${AppName}CongitoAuthPolicy'
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: 'Allow'
+                Action:
+                  - 'cognito-sync:*'
+                  - 'cognito-identity:*'
+                Resource: '*'
+              
+              # S3 bucket for admin files
+              - Effect: 'Allow'
+                Action:
+                  - 's3:PutObject'
+                  - 's3:DeleteObject'
+                  - 's3:DeleteObjects'
+                  - 's3:ListObjectsV2'
+                  - 's3:GetObject'
+                  - 's3:ListBucket'
+                Resource: !Sub ${CintsaS3Bucket.Arn}/*
+
+  # IAM roles
+  CintsaIdentityPoolRoles:
+    Type: AWS::Cognito::IdentityPoolRoleAttachment
+    Properties:
+      IdentityPoolId: !Ref CintsaIdentityPool
+      Roles:
+        authenticated: !GetAtt CintsaAuthRole.Arn
+      
+Outputs:
+  CintsaUserPool:
+    Description: The User pool to associate the CMS with
+    Value: !Ref CintsaUserPool
+    Export:
+      Name: !Sub '${AppName}-CintsaUserPoolId'
+  CintsaUserPoolClient:
+    Description: The User pool client to associate the CMS with
+    Value: !Ref CintsaUserPoolClient
+    Export:
+      Name: !Sub '${AppName}-CintsaUserPoolClientId'
+  CinstaIdentityPoolId:
+    Description: ID of the Cintsa Cognito identity ppol
+    Value: !Ref CintsaIdentityPool
+    Export:
+      Name: !Sub '${AppName}-CintsaIdentityPoolId'
+  CintsaWebsiteURL:
+    Description: URL for website hosted on S3 with Cintsa CMS
+    Value: !GetAtt 
+      - CintsaCDN
+      - DomainName
+    Export:
+      Name: !Sub '${AppName}-CintsaWebsiteURL'

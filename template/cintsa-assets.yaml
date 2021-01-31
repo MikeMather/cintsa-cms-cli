@@ -1,0 +1,16 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >
+  Cintsa CMS Dynamic Lambda Builder
+Parameters:
+    DomainName:
+      Type: String
+      Default: cintsa.com
+    AppName:
+      Type: String
+      Default: CintsaApp
+
+Resources:
+  CintsaAssets:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub 'cintsa-artifacts-${DomainName}'

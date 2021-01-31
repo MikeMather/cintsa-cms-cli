@@ -27,8 +27,11 @@ export default class Deploy extends Command {
       const fileStat = fse.lstatSync(filePath);
       const filename = file.split('.');
       if (fileStat.isFile() && filename.pop() === 'njk') {
+        fse.copyFileSync(filePath, `${this.destDir}/admin/${file}`);
         const view = {
-          global: this.pieces
+          global: {
+            pieces: this.pieces
+          }
         };
         const rendered = nj.render(filePath, view);
         if (file === 'index.njk') {
@@ -64,7 +67,7 @@ export default class Deploy extends Command {
         }
 
         // For each directory, render all files and add the data to our global state object
-        files.forEach((piece) => {
+        files.forEach(piece => {
           const post = fse.readFileSync(`${subDir}/${piece}`).toString();
           const content = fm(post);
           const atts = content.attributes as Piece;
@@ -118,7 +121,9 @@ export default class Deploy extends Command {
       // render markdown file into the HTML piece template
       const view = {
         ...piece,
-        global: this.pieces
+        global: {
+          pieces: this.pieces
+        }
       }
       // Only render published files
       if (view.status === PieceStatus.PUBLISHED) {
@@ -135,10 +140,12 @@ export default class Deploy extends Command {
 
   async run() {
     const {args, flags} = this.parse(Deploy)
+    fse.removeSync(this.destDir);
+    fse.mkdirSync(this.destDir);
     // Sync files that don't require any rendering
     fse.copySync(`${this.srcDir}/assets`, `${this.destDir}/assets`, {overwrite: true});
     fse.copySync(`${this.srcDir}/layouts`, `${this.destDir}/admin/layouts`, {overwrite: true});
-    fse.copySync(`${this.srcDir}/layouts`, `${this.destDir}/admin/includes`, {overwrite: true});
+    fse.copySync(`${this.srcDir}/includes`, `${this.destDir}/admin/includes`, {overwrite: true});
     fse.copyFileSync(`${process.cwd()}/.cintsa/aws-exports.json`, `${this.destDir}/assets/js/aws-exports.json`);
     this.getPieces();
     this.renderPieces();

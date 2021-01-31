@@ -35,10 +35,10 @@ export default class CreateUser extends Command {
     const resources = JSON.parse(fs.readFileSync(this.awsExportsPath).toString());
     const tmpPassword = this.generateTempPassword();
     const cognito = new AWS.CognitoIdentityServiceProvider({
-        region: resources.auth.region
+        region: resources.Auth.region
     });
     const params = {
-        UserPoolId: resources.auth.userPoolId,
+        UserPoolId: resources.Auth.userPoolId,
         Username: flags.email,
         DesiredDeliveryMediums: [
             'EMAIL'

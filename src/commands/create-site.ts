@@ -17,8 +17,9 @@ export default class CreateSite extends Command {
 
   readonly dirPath = '.cintsa';
   readonly configPath = path.join(process.cwd(), `${this.dirPath}/config.json`);
-  readonly destTemplatePath = path.join(process.cwd(), `${this.dirPath}/static-site.yaml`);
-  readonly templatePath = path.join(__dirname, `../../template/static-site.yaml`);
+  readonly destTemplatePath = path.join(process.cwd(), `${this.dirPath}/cloud-stack.yaml`);
+  readonly templatePath = path.join(__dirname, `../../template/cloud-stack.yaml`);
+  readonly assetsTemplatePath = path.join(__dirname, `../../template/cintsa-assets.yaml`);
   readonly destExportsPath = path.join(process.cwd(), `${this.dirPath}/aws-exports.json`);
 
   validateConfig(config: Config): void {
@@ -59,8 +60,8 @@ export default class CreateSite extends Command {
       });
     });
     const output = {
-      auth: awsExports,
-      storage: {
+      Auth: awsExports,
+      Storage: {
         bucket: domainName,
         region
       }
@@ -68,6 +69,70 @@ export default class CreateSite extends Command {
     fs.writeFileSync(this.destExportsPath, JSON.stringify(output, null, 4));
   }
 
+  async createArtifactsStack(template: string, config: Config, cfn: AWS.CloudFormation, params: any): Promise<void> {
+    return new Promise((resolve, reject) => {
+      const options = {
+        ...params,
+        TemplateBody: template,
+        StackName: `${config.appName}-CintsaArtifacts`
+      };
+      cfn.createStack(options).promise().then(() => {
+        cli.action.start('Creating Cintsa artifacts bucket');
+        cfn.waitFor('stackCreateComplete', { StackName: options.StackName }).promise()
+          .then(data => {
+            const file = fs.readFileSync(path.join(__dirname, '../lambda/dynamicBuilder.zip'));
+            const s3 = new AWS.S3();
+            s3.putObject({
+              Bucket: `cintsa-artifacts-${config.domainName}`,
+              Body: file,
+              Key: 'dynamicBuilder.zip'
+            }).promise().then(() => {
+              cli.action.stop();
+              resolve();
+            }).catch(err => {
+              this.error(err);
+            })
+          })
+          .catch(err => {
+            this.error(`There was an error creating the stack: ${JSON.stringify(err)}`);
+          });
+      })
+    })
+  }
+
+  async createAppStack(template: string, config: Config, cfn: AWS.CloudFormation, params: any): Promise<void> {
+    cli.action.start('Creating site cloud stack. This could take a few minutes');
+    return new Promise((resolve, reject) => {
+      const options = {
+        ...params,
+        TemplateBody: template,
+        StackName: config.appName
+      };
+      cfn.createStack(options).promise()
+        .then(data => {
+          cfn.waitFor('stackCreateComplete', { StackName: options.StackName }).promise()
+            .then(data => {
+              this.log('Stack create complete');
+              cfn.listExports({}).promise()
+                .then(exports => {
+                  this.generateExportsFile(exports.Exports, config);
+                  cli.action.stop();
+                  resolve();
+                })
+                .catch(err => {
+                  this.error(err);
+                });
+            })
+            .catch(err => {
+              this.error(`There was an error creating the stack: ${JSON.stringify(err)}`);
+            });
+        })
+        .catch(err => {
+          this.log('An error occurred creating the stack')
+          this.error(JSON.stringify(err));
+        });
+    });
+  }
 
   /**
    * Copy the stack to the process folder and render it with the config variables.
@@ -79,14 +144,8 @@ export default class CreateSite extends Command {
     this.validateConfig(config);
 
     // Render the template using the config variables
-    let template: string;
-    if (fs.existsSync(this.destTemplatePath)) {
-      template = fs.readFileSync(this.destTemplatePath).toString();
-    }
-    else {
-      template = mustache.render(fs.readFileSync(this.templatePath).toString(), config);
-      fs.writeFileSync(this.destTemplatePath, template);
-    }
+    const template: string = fs.readFileSync(this.templatePath).toString()
+    const assetsTemplate: string = fs.readFileSync(this.assetsTemplatePath).toString()
   
     const cfn = new AWS.CloudFormation({
       region: config.region
@@ -94,10 +153,21 @@ export default class CreateSite extends Command {
     const params = {
       StackName : config.appName,
       Capabilities: [ 'CAPABILITY_IAM' ],
-      TemplateBody: template
+      TemplateBody: template,
+      Parameters: [
+        {
+          ParameterKey: 'DomainName',
+          ParameterValue: config.domainName
+        },
+        {
+          ParameterKey: 'AppName',
+          ParameterValue: config.appName
+        }
+      ]
     };
     this.log(`Cintsa will now create the AWS resources necessary to host your CMS, including:
       1. An S3 bucket for static site hosting
+      2. A Lambda function for real-time site building
       2. A Cognito user/identity pool for authorization
       3. A Cloudfront distribution as a CDN
     `);
@@ -105,28 +175,7 @@ export default class CreateSite extends Command {
     if (!confirm) {
       this.exit();
     }
-
-    // Create the stack
-    cli.action.start('Creating CloudFormation stack. This might take a few minutes');
-    cfn.createStack(params, (err, data) => {
-      if (err) {
-        this.log('An error occurred creating the stack')
-        this.error(JSON.stringify(err));
-      }
-      cfn.waitFor('stackCreateComplete', { StackName: params.StackName }, (err, data) => {
-        if (err) {
-          this.error(`There was an error creating the stack: ${JSON.stringify(err)}`);
-        }
-        this.log('Stack create complete');
-        cfn.listExports({}, (err, data) => {
-          if (err) {
-            this.error(err);
-          }
-          this.generateExportsFile(data.Exports, config);
-        });
-        cli.action.stop();
-        this.log('Note: It might take a few minutes for your CloudFront distribution to register with the S3 bucket.')
-      });
-    });
+    //await this.createArtifactsStack(assetsTemplate, config, cfn, params);
+    await this.createAppStack(template, config, cfn, params);
   }
 }
