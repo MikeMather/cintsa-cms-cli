@@ -2,8 +2,6 @@ import {Command, flags} from '@oclif/command'
 import * as fs from 'fs';
 import cli from 'cli-ux'
 import * as path from 'path';
-import * as mustache from 'mustache';
-import * as crypto from 'crypto';
 import * as AWS from 'aws-sdk';
 import { Config } from '../types/types'
 import { Exports } from 'aws-sdk/clients/cloudformation';
@@ -18,13 +16,13 @@ export default class CreateSite extends Command {
   readonly dirPath = '.cintsa';
   readonly configPath = path.join(process.cwd(), `${this.dirPath}/config.json`);
   readonly destTemplatePath = path.join(process.cwd(), `${this.dirPath}/cloud-stack.yaml`);
-  readonly templatePath = path.join(__dirname, `../../template/cloud-stack.yaml`);
-  readonly assetsTemplatePath = path.join(__dirname, `../../template/cintsa-assets.yaml`);
+  readonly templatePath = path.join(__dirname, '../../template/cloud-stack.yaml');
+  readonly assetsTemplatePath = path.join(__dirname, '../../template/cintsa-assets.yaml');
   readonly destExportsPath = path.join(process.cwd(), `${this.dirPath}/aws-exports.json`);
 
   validateConfig(config: Config): void {
-    const { appName, domainName, region, profile, siteGenerator } = config;
-    if (!(appName && domainName && region && profile)) {
+    const { appName, domainName, region } = config;
+    if (!(appName && domainName && region)) {
       this.error('Config values from config.json missing or invalid');
     }
   }
@@ -39,16 +37,16 @@ export default class CreateSite extends Command {
     const { region, domainName, appName } = config;
     // The format of the file that Amplify needs to authenticate
     const awsExports: {[key: string]: string} = {
-        region,
-        identityPoolId: '',
-        userPoolId: '',
-        userPoolWebClientId: ''
+      region,
+      identityPoolId: '',
+      userPoolId: '',
+      userPoolWebClientId: ''
     };
 
     // Put the app name into the CF variables and map them to the export file variables
     const cfOutput = [ 'CintsaIdentityPoolId', 'CintsaUserPoolClientId', 'CintsaUserPoolId' ];
     const exportKeys = [ 'identityPoolId', 'userPoolWebClientId', 'userPoolId' ]
-    const keys: {[key: string]: string } = cfOutput.reduce((obj, key, i) => ({ 
+    const keys: {[key: string]: string } = cfOutput.reduce((obj, key, i) => ({
       ...obj,
       [`${appName}-${key}`]: exportKeys[i] 
     }), {})
@@ -79,23 +77,23 @@ export default class CreateSite extends Command {
       cfn.createStack(options).promise().then(() => {
         cli.action.start('Creating Cintsa artifacts bucket');
         cfn.waitFor('stackCreateComplete', { StackName: options.StackName }).promise()
-          .then(data => {
-            const file = fs.readFileSync(path.join(__dirname, '../lambda/dynamicBuilder.zip'));
-            const s3 = new AWS.S3();
-            s3.putObject({
-              Bucket: `cintsa-artifacts-${config.domainName}`,
-              Body: file,
-              Key: 'dynamicBuilder.zip'
-            }).promise().then(() => {
-              cli.action.stop();
-              resolve();
-            }).catch(err => {
-              this.error(err);
-            })
+        .then(data => {
+          const file = fs.readFileSync(path.join(__dirname, '../lambda/dynamicBuilder.zip'));
+          const s3 = new AWS.S3();
+          s3.putObject({
+            Bucket: `cintsa-artifacts-${config.domainName}`,
+            Body: file,
+            Key: 'dynamicBuilder.zip'
+          }).promise().then(() => {
+            cli.action.stop();
+            resolve();
+          }).catch(err => {
+            this.error(err);
           })
-          .catch(err => {
-            this.error(`There was an error creating the stack: ${JSON.stringify(err)}`);
-          });
+        })
+        .catch(err => {
+          this.error(`There was an error creating the stack: ${JSON.stringify(err)}`);
+        });
       })
     })
   }
@@ -109,28 +107,28 @@ export default class CreateSite extends Command {
         StackName: config.appName
       };
       cfn.createStack(options).promise()
+      .then(data => {
+        cfn.waitFor('stackCreateComplete', { StackName: options.StackName }).promise()
         .then(data => {
-          cfn.waitFor('stackCreateComplete', { StackName: options.StackName }).promise()
-            .then(data => {
-              this.log('Stack create complete');
-              cfn.listExports({}).promise()
-                .then(exports => {
-                  this.generateExportsFile(exports.Exports, config);
-                  cli.action.stop();
-                  resolve();
-                })
-                .catch(err => {
-                  this.error(err);
-                });
-            })
-            .catch(err => {
-              this.error(`There was an error creating the stack: ${JSON.stringify(err)}`);
-            });
+          this.log('Stack create complete');
+          cfn.listExports({}).promise()
+          .then(exports => {
+            this.generateExportsFile(exports.Exports, config);
+            cli.action.stop();
+            resolve();
+          })
+          .catch(err => {
+            this.error(err);
+          });
         })
         .catch(err => {
-          this.log('An error occurred creating the stack')
-          this.error(JSON.stringify(err));
+          this.error(`There was an error creating the stack: ${JSON.stringify(err)}`);
         });
+      })
+      .catch(err => {
+        this.log('An error occurred creating the stack')
+        this.error(JSON.stringify(err));
+      });
     });
   }
 
@@ -146,12 +144,12 @@ export default class CreateSite extends Command {
     // Render the template using the config variables
     const template: string = fs.readFileSync(this.templatePath).toString()
     const assetsTemplate: string = fs.readFileSync(this.assetsTemplatePath).toString()
-  
+
     const cfn = new AWS.CloudFormation({
       region: config.region
     });
     const params = {
-      StackName : config.appName,
+      StackName: config.appName,
       Capabilities: [ 'CAPABILITY_IAM' ],
       TemplateBody: template,
       Parameters: [
@@ -175,7 +173,7 @@ export default class CreateSite extends Command {
     if (!confirm) {
       this.exit();
     }
-    //await this.createArtifactsStack(assetsTemplate, config, cfn, params);
+    await this.createArtifactsStack(assetsTemplate, config, cfn, params);
     await this.createAppStack(template, config, cfn, params);
   }
 }

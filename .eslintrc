@@ -2,5 +2,17 @@
   "extends": [
     "oclif",
     "oclif-typescript"
-  ]
+  ],
+  "rules": {
+    "comma-dangle": "off",
+    "no-unused-vars": "off",
+    "semi": "off",
+    "object-curly-spacing": "off",
+    "no-negated-condition": "off",
+    "brace-style":"off",
+    "no-console":"off",
+    "no-lonely-if":"off",
+    "lines-between-class-members": "off",
+    "array-bracket-spacing": "off"
+  }
 }

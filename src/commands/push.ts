@@ -9,7 +9,9 @@ export default class Push extends Command {
   static flags = {
     help: flags.help({char: 'h'})
   }
+  
   readonly dirPath = '.cintsa';
+
   readonly configPath = path.join(process.cwd(), `${this.dirPath}/config.json`);
 
   async run() {

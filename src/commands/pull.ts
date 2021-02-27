@@ -16,7 +16,7 @@ export default class Push extends Command {
   async run() {
     const {args, flags} = this.parse(Push)
     const { domainName } = JSON.parse(fs.readFileSync(this.configPath).toString());
-    const syncPath = path.join(process.cwd(), 'src');
+    const syncPath = path.join(process.cwd(), 'templates');
     exec(`aws s3 sync s3://${domainName}/admin ${syncPath}`, (err, stdout, stderr) => {
       this.log(stdout);
     });
