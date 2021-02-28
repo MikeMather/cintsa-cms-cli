@@ -1,7 +1,5 @@
 {
-  "profile": "",
   "appName": "",
   "domainName": "",
-  "region": "us-east-1",
-  "siteGenerator": "jekyll"
+  "region": "us-east-1"
 }
