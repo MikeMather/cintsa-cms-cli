@@ -1,7 +1,7 @@
-cintsa
+Cintsa CLI
 ======
 
-The CLI tool for the Cintsa CMS system
+The CLI tool for the Cintsa CMS system. You can use this to deploy a static-site hosting stack to AWS that is compatible with [Cintsa CMS](https://github.com/MikeMather/cintsa-cms)
 
 <!-- toc -->
 * [Usage](#usage)
