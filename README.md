@@ -10,7 +10,7 @@ The CLI tool for the Cintsa CMS system. You can use this to deploy a static-site
 # Usage
 <!-- usage -->
 ```sh-session
-$ npm install -g cintsa
+$ npm install -g cintsa-cms-cli
 $ cintsa init
 $ cintsa create-site
 ```
