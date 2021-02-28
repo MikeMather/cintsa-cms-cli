@@ -17,7 +17,14 @@ $ cintsa create-site
 <!-- usagestop -->
 # Commands
 <!-- commands -->
-* [`cintsa init`](#cintsa-hello-file)
+* [`cintsa init`](#cintsa-init)
+* [`cintsa create-site`](#cintsa-create-site)
+* [`cintsa create-user`](#cintsa-create-user)
+* [`cintsa destroy`](#cintsa-destroy)
+* [`cintsa build`](#cintsa-build)
+* [`cintsa serve`](#cintsa-serve)
+* [`cintsa pull`](#cintsa-pull)
+* [`cintsa push`](#cintsa-push)
 * [`cintsa help [COMMAND]`](#cintsa-help-command)
 
 ## `cintsa init`
