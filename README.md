@@ -3,11 +3,6 @@ cintsa
 
 The CLI tool for the Cintsa CMS system
 
-[![oclif](https://img.shields.io/badge/cli-oclif-brightgreen.svg)](https://oclif.io)
-[![Version](https://img.shields.io/npm/v/cintsa.svg)](https://npmjs.org/package/cintsa)
-[![Downloads/week](https://img.shields.io/npm/dw/cintsa.svg)](https://npmjs.org/package/cintsa)
-[![License](https://img.shields.io/npm/l/cintsa.svg)](https://github.com/https://github.com/MikeMather/https://github.com/MikeMather/cintsa-cms-cli/blob/master/package.json)
-
 <!-- toc -->
 * [Usage](#usage)
 * [Commands](#commands)
@@ -16,44 +11,98 @@ The CLI tool for the Cintsa CMS system
 <!-- usage -->
 ```sh-session
 $ npm install -g cintsa
-$ cintsa COMMAND
-running command...
-$ cintsa (-v|--version|version)
-cintsa/0.0.0 darwin-x64 node-v12.13.1
-$ cintsa --help [COMMAND]
-USAGE
-  $ cintsa COMMAND
-...
+$ cintsa init
+$ cintsa create-site
 ```
 <!-- usagestop -->
 # Commands
 <!-- commands -->
-* [`cintsa hello [FILE]`](#cintsa-hello-file)
+* [`cintsa init`](#cintsa-hello-file)
 * [`cintsa help [COMMAND]`](#cintsa-help-command)
 
-## `cintsa hello [FILE]`
+## `cintsa init`
 
-describe the command here
+Initializes the project with Cintsa config files in the .cintsa/ directory
+```
+USAGE
+  $ cintsa init
+```
+
+## `cintsa create-site`
+
+Deploys an AWS CloudFormation stack to create the Cintsa project in the cloud. This requires valid AWS credentials and the .cintsa/config.json to be valid.
+```
+USAGE
+  $ cintsa create-site
+```
+
+## `cintsa create-user --email [EMAIL]`
+
+Once your site is deployed, you can create a user to login to the editor using this command.
 
 ```
 USAGE
-  $ cintsa hello [FILE]
+  $ cintsa create-user
 
-OPTIONS
-  -f, --force
-  -h, --help       show CLI help
-  -n, --name=name  name to print
-
-EXAMPLE
-  $ cintsa hello
-  hello world from ./src/hello.ts!
+FLAGS
+  --email  the email to use as the login username
 ```
 
-_See code: [src/commands/hello.ts](https://github.com/MikeMather/https://github.com/MikeMather/cintsa-cms-cli/blob/v0.0.0/src/commands/hello.ts)_
+## `cintsa destroy`
+
+Destroy the site and all the AWS resources.
+```
+USAGE
+  $ cintsa destroy
+```
+<!-- commandsstop -->
+
+## `cintsa build`
+
+Builds your static site files into the _site directory. The _site directory can now be used to serve your files from S3.
+
+```
+USAGE
+  $ cintsa build
+```
+<!-- commandsstop -->
+
+## `cintsa serve`
+
+Builds and serves the files in the _site folder
+
+```
+USAGE
+  $ cintsa serve
+
+OPTIONS
+  --port  the port to serve the site on
+```
+<!-- commandsstop -->
+
+## `cintsa pull`
+
+Pull files from the S3 bucket into your local /admin directory
+
+```
+USAGE
+  $ cintsa pull
+```
+<!-- commandsstop -->
+
+## `cintsa push`
+
+Pushes your _site directory to your S3 bucket. Recommended to run `cintsa build` before pushing to S3.
+```
+USAGE
+  $ cintsa push
+```
+
+<!-- commandsstop -->
 
 ## `cintsa help [COMMAND]`
 
-display help for cintsa
+Display help for cintsa
 
 ```
 USAGE
@@ -65,6 +114,3 @@ ARGUMENTS
 OPTIONS
   --all  see all commands in CLI
 ```
-
-_See code: [@oclif/plugin-help](https://github.com/oclif/plugin-help/blob/v3.2.1/src/commands/help.ts)_
-<!-- commandsstop -->
