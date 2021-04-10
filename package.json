@@ -48,7 +48,8 @@
     "/bin",
     "/lib",
     "/npm-shrinkwrap.json",
-    "/oclif.manifest.json"
+    "/oclif.manifest.json",
+    "/template/init"
   ],
   "homepage": "https://github.com/https://github.com/MikeMather/https://github.com/MikeMather/cintsa-cms-cli",
   "keywords": [
