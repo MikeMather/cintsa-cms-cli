@@ -11,100 +11,158 @@ The CLI tool for the Cintsa CMS system. You can use this to deploy a static-site
 <!-- usage -->
 ```sh-session
 $ npm install -g cintsa-cms-cli
-$ cintsa init
-$ cintsa create-site
+$ cintsa COMMAND
+running command...
+$ cintsa (-v|--version|version)
+cintsa-cms-cli/0.1.0 darwin-x64 node-v12.13.1
+$ cintsa --help [COMMAND]
+USAGE
+  $ cintsa COMMAND
+...
 ```
 <!-- usagestop -->
 # Commands
 <!-- commands -->
-* [`cintsa init`](#cintsa-init)
+* [`cintsa build`](#cintsa-build)
 * [`cintsa create-site`](#cintsa-create-site)
 * [`cintsa create-user`](#cintsa-create-user)
 * [`cintsa destroy`](#cintsa-destroy)
-* [`cintsa build`](#cintsa-build)
-* [`cintsa serve`](#cintsa-serve)
+* [`cintsa help [COMMAND]`](#cintsa-help-command)
+* [`cintsa init`](#cintsa-init)
 * [`cintsa pull`](#cintsa-pull)
 * [`cintsa push`](#cintsa-push)
-* [`cintsa help [COMMAND]`](#cintsa-help-command)
+* [`cintsa serve`](#cintsa-serve)
 
-## `cintsa init`
+## `cintsa build`
 
-Initializes the project with Cintsa config files in the .cintsa/ directory
+Compile the templates into static html
+
 ```
 USAGE
-  $ cintsa init
+  $ cintsa build
+
+OPTIONS
+  -h, --help  show CLI help
 ```
+
+_See code: [src/commands/build.ts](https://github.com/MikeMather/https://github.com/MikeMather/cintsa-cms-cli/blob/v0.1.0/src/commands/build.ts)_
 
 ## `cintsa create-site`
 
-Deploys an AWS CloudFormation stack to create the Cintsa project in the cloud. This requires valid AWS credentials and the .cintsa/config.json to be valid.
+Initialize the project for use with Cintsa CMS
+
 ```
 USAGE
   $ cintsa create-site
+
+OPTIONS
+  -h, --help  show CLI help
 ```
 
-## `cintsa create-user --email [EMAIL]`
+_See code: [src/commands/create-site.ts](https://github.com/MikeMather/https://github.com/MikeMather/cintsa-cms-cli/blob/v0.1.0/src/commands/create-site.ts)_
 
-Once your site is deployed, you can create a user to login to the editor using this command.
+## `cintsa create-user`
+
+Create a user in your Cognito user pool
 
 ```
 USAGE
   $ cintsa create-user
 
-FLAGS
-  --email  the email to use as the login username
+OPTIONS
+  -e, --email=email  (required)
+  -h, --help         show CLI help
 ```
+
+_See code: [src/commands/create-user.ts](https://github.com/MikeMather/https://github.com/MikeMather/cintsa-cms-cli/blob/v0.1.0/src/commands/create-user.ts)_
 
 ## `cintsa destroy`
 
-Destroy the site and all the AWS resources.
+Initialize the project for use with Cintsa CMS
+
 ```
 USAGE
   $ cintsa destroy
+
+OPTIONS
+  -h, --help  show CLI help
 ```
-<!-- commandsstop -->
 
-## `cintsa build`
+_See code: [src/commands/destroy.ts](https://github.com/MikeMather/https://github.com/MikeMather/cintsa-cms-cli/blob/v0.1.0/src/commands/destroy.ts)_
 
-Builds your static site files into the _site directory. The _site directory can now be used to serve your files from S3.
+## `cintsa help [COMMAND]`
+
+display help for cintsa
 
 ```
 USAGE
-  $ cintsa build
+  $ cintsa help [COMMAND]
+
+ARGUMENTS
+  COMMAND  command to show help for
+
+OPTIONS
+  --all  see all commands in CLI
 ```
-<!-- commandsstop -->
+
+_See code: [@oclif/plugin-help](https://github.com/oclif/plugin-help/blob/v3.2.1/src/commands/help.ts)_
+
+## `cintsa init`
+
+Initialize the project for use with Cintsa CMS
+
+```
+USAGE
+  $ cintsa init
+
+OPTIONS
+  -h, --help  show CLI help
+```
+
+_See code: [src/commands/init.ts](https://github.com/MikeMather/https://github.com/MikeMather/cintsa-cms-cli/blob/v0.1.0/src/commands/init.ts)_
+
+## `cintsa pull`
+
+Pull the CMS files from the S3 bucket into the src directory
+
+```
+USAGE
+  $ cintsa pull
+
+OPTIONS
+  -h, --help  show CLI help
+```
+
+_See code: [src/commands/pull.ts](https://github.com/MikeMather/https://github.com/MikeMather/cintsa-cms-cli/blob/v0.1.0/src/commands/pull.ts)_
+
+## `cintsa push`
+
+Push build folder up to S3 to serve the static files
+
+```
+USAGE
+  $ cintsa push
+
+OPTIONS
+  -h, --help  show CLI help
+```
+
+_See code: [src/commands/push.ts](https://github.com/MikeMather/https://github.com/MikeMather/cintsa-cms-cli/blob/v0.1.0/src/commands/push.ts)_
 
 ## `cintsa serve`
 
-Builds and serves the files in the _site folder
+Initialize the project for use with Cintsa CMS
 
 ```
 USAGE
   $ cintsa serve
 
 OPTIONS
-  --port  the port to serve the site on
-```
-<!-- commandsstop -->
-
-## `cintsa pull`
-
-Pull files from the S3 bucket into your local /admin directory
-
-```
-USAGE
-  $ cintsa pull
-```
-<!-- commandsstop -->
-
-## `cintsa push`
-
-Pushes your _site directory to your S3 bucket. Recommended to run `cintsa build` before pushing to S3.
-```
-USAGE
-  $ cintsa push
+  -h, --help       show CLI help
+  -p, --port=port
 ```
 
+_See code: [src/commands/serve.ts](https://github.com/MikeMather/https://github.com/MikeMather/cintsa-cms-cli/blob/v0.1.0/src/commands/serve.ts)_
 <!-- commandsstop -->
 
 ## `cintsa help [COMMAND]`
