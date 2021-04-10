@@ -1,7 +1,7 @@
 {
   "name": "cintsa-cms-cli",
   "description": "The CLI tool for the Cintsa CMS system",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "author": " @MikeMather",
   "bin": {
     "cintsa": "./bin/run"
@@ -49,7 +49,7 @@
     "/lib",
     "/npm-shrinkwrap.json",
     "/oclif.manifest.json",
-    "/template/init"
+    "/template"
   ],
   "homepage": "https://github.com/https://github.com/MikeMather/https://github.com/MikeMather/cintsa-cms-cli",
   "keywords": [
