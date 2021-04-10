@@ -14,7 +14,7 @@ $ npm install -g cintsa-cms-cli
 $ cintsa COMMAND
 running command...
 $ cintsa (-v|--version|version)
-cintsa-cms-cli/0.1.2 darwin-x64 node-v12.13.1
+cintsa-cms-cli/0.1.3 darwin-x64 node-v12.13.1
 $ cintsa --help [COMMAND]
 USAGE
   $ cintsa COMMAND
@@ -45,7 +45,7 @@ OPTIONS
   -h, --help  show CLI help
 ```
 
-_See code: [src/commands/build.ts](https://github.com/MikeMather/https://github.com/MikeMather/cintsa-cms-cli/blob/v0.1.2/src/commands/build.ts)_
+_See code: [src/commands/build.ts](https://github.com/MikeMather/https://github.com/MikeMather/cintsa-cms-cli/blob/v0.1.3/src/commands/build.ts)_
 
 ## `cintsa create-site`
 
@@ -59,7 +59,7 @@ OPTIONS
   -h, --help  show CLI help
 ```
 
-_See code: [src/commands/create-site.ts](https://github.com/MikeMather/https://github.com/MikeMather/cintsa-cms-cli/blob/v0.1.2/src/commands/create-site.ts)_
+_See code: [src/commands/create-site.ts](https://github.com/MikeMather/https://github.com/MikeMather/cintsa-cms-cli/blob/v0.1.3/src/commands/create-site.ts)_
 
 ## `cintsa create-user`
 
@@ -74,7 +74,7 @@ OPTIONS
   -h, --help         show CLI help
 ```
 
-_See code: [src/commands/create-user.ts](https://github.com/MikeMather/https://github.com/MikeMather/cintsa-cms-cli/blob/v0.1.2/src/commands/create-user.ts)_
+_See code: [src/commands/create-user.ts](https://github.com/MikeMather/https://github.com/MikeMather/cintsa-cms-cli/blob/v0.1.3/src/commands/create-user.ts)_
 
 ## `cintsa destroy`
 
@@ -88,7 +88,7 @@ OPTIONS
   -h, --help  show CLI help
 ```
 
-_See code: [src/commands/destroy.ts](https://github.com/MikeMather/https://github.com/MikeMather/cintsa-cms-cli/blob/v0.1.2/src/commands/destroy.ts)_
+_See code: [src/commands/destroy.ts](https://github.com/MikeMather/https://github.com/MikeMather/cintsa-cms-cli/blob/v0.1.3/src/commands/destroy.ts)_
 
 ## `cintsa help [COMMAND]`
 
@@ -119,7 +119,7 @@ OPTIONS
   -h, --help  show CLI help
 ```
 
-_See code: [src/commands/init.ts](https://github.com/MikeMather/https://github.com/MikeMather/cintsa-cms-cli/blob/v0.1.2/src/commands/init.ts)_
+_See code: [src/commands/init.ts](https://github.com/MikeMather/https://github.com/MikeMather/cintsa-cms-cli/blob/v0.1.3/src/commands/init.ts)_
 
 ## `cintsa pull`
 
@@ -133,7 +133,7 @@ OPTIONS
   -h, --help  show CLI help
 ```
 
-_See code: [src/commands/pull.ts](https://github.com/MikeMather/https://github.com/MikeMather/cintsa-cms-cli/blob/v0.1.2/src/commands/pull.ts)_
+_See code: [src/commands/pull.ts](https://github.com/MikeMather/https://github.com/MikeMather/cintsa-cms-cli/blob/v0.1.3/src/commands/pull.ts)_
 
 ## `cintsa push`
 
@@ -147,7 +147,7 @@ OPTIONS
   -h, --help  show CLI help
 ```
 
-_See code: [src/commands/push.ts](https://github.com/MikeMather/https://github.com/MikeMather/cintsa-cms-cli/blob/v0.1.2/src/commands/push.ts)_
+_See code: [src/commands/push.ts](https://github.com/MikeMather/https://github.com/MikeMather/cintsa-cms-cli/blob/v0.1.3/src/commands/push.ts)_
 
 ## `cintsa serve`
 
@@ -162,7 +162,7 @@ OPTIONS
   -p, --port=port
 ```
 
-_See code: [src/commands/serve.ts](https://github.com/MikeMather/https://github.com/MikeMather/cintsa-cms-cli/blob/v0.1.2/src/commands/serve.ts)_
+_See code: [src/commands/serve.ts](https://github.com/MikeMather/https://github.com/MikeMather/cintsa-cms-cli/blob/v0.1.3/src/commands/serve.ts)_
 <!-- commandsstop -->
 
 ## `cintsa help [COMMAND]`
